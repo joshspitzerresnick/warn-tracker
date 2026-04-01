@@ -6,3 +6,4 @@ This is a project of [What We Will](https://wwwrise.org) to track [WARN Act](htt
 ```
 streamlit run warn_tracker_dashboard.py
 ```
+or view it here: https://warn-tracker.streamlit.app
