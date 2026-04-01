@@ -3,18 +3,19 @@ import pandas as pd
 import numpy as np
 import datetime
 import plotly.express as px
+import us
 
 # --- Page Configuration ---
 # Set page config
-st.set_page_config(page_title="WARN Act Tracker", layout="wide", page_icon='favicon.ico')
+st.set_page_config(page_title='WARN Act Tracker', layout='wide', page_icon='favicon.ico')
 st.logo('https://wwwrise.org/images/branding/WWW-logo-horizontal.svg', link='https://wwwrise.org')
 # st.image('https://wwwrise.org/favicon.ico')
 
-st.title("WARN Act Layoff Tracker")
-st.markdown("This is a project of [What We Will](https://wwwrise.org) to track [WARN Act](https://www.ecfr.gov/current/title-20/chapter-V/part-639) filings across the US. \
+st.title('WARN Act Layoff Tracker')
+st.markdown('This is a project of [What We Will](https://wwwrise.org) to track [WARN Act](https://www.ecfr.gov/current/title-20/chapter-V/part-639) filings across the US. \
             Data is sourced from the [WARN Scraper](https://github.com/biglocalnews/warn-scraper), which collects data from state labor department websites. \
-            The dashboard allows users to explore WARN Act filings, filter by various criteria, and visualize trends over time.")
-st.markdown('Note that not all states make WARN Act filings public, and not all state scrapers are fully implemented.')
+            The dashboard allows users to explore WARN Act filings, filter by various criteria, and visualize trends over time. \
+            *Note that not all states make WARN Act filings public, and not all state scrapers are fully implemented.*')
 
 # @st.cache_data # Cache the data loading for performance
 def load_data():
@@ -22,15 +23,13 @@ def load_data():
     # df = pd.read_csv("/Users/joshuadsr/.warn-scraper/exports/wi.csv", sep=',')
     column_order = ['company', 'jobs', 'notice_date', 'effective_date', 'postal_code', 'location']
     # df = pd.read_csv("integrated.csv", usecols=column_order)[column_order] # .head(5000) # dtype=str,
-    df = pd.read_parquet("integrated.parquet").head(7500) # , usecols=column_order)[column_order]
+    df = pd.read_parquet('data/integrated.parquet').head(7500) # , usecols=column_order)[column_order]
     df['notice_date'] = pd.to_datetime(df['notice_date'], errors='coerce')
     df['effective_date'] = pd.to_datetime(df['effective_date'], errors='coerce')
     df['date'] = df[['notice_date', 'effective_date']].min(axis=1)
     return df
 
 df = load_data()
-st.markdown(f'Columns in integrated.csv: {list(df.columns)}')
-st.markdown(f'{df['postal_code'].nunique()} states in dataset: {', '.join(sorted(df['postal_code'].unique()))}.')
 
 # 2. Add an interactive widget (slider) for filtering
 st.sidebar.header('Filter data')
@@ -38,8 +37,8 @@ st.sidebar.header('Filter data')
 # 1. State Filter
 selected_states = st.sidebar.multiselect(
     "States",
-    options=df["postal_code"].unique(),
-    default=df["postal_code"].unique()
+    options=sorted(df["postal_code"].unique()),
+    default=sorted(df["postal_code"].unique())
 )
 
 # 2. Company Filter
@@ -94,11 +93,20 @@ col1, col2, col3 = st.columns(3)
 col1.metric("Total layoffs", int(filtered_df["jobs"].sum()))
 col2.metric("Unique companies", filtered_df["company"].nunique())
 col3.metric("States affected", filtered_df["postal_code"].nunique())
+st.markdown(f'{df['postal_code'].nunique()} states (+DC) in dataset: {', '.join(sorted(df['postal_code'].unique()))}.')
+state_abbrs = [s.abbr for s in us.STATES]
+territory_abbrs = [s.abbr for s in us.TERRITORIES]
+absent_states = set(state_abbrs) - set(df['postal_code'].unique())
+absent_territories = set(territory_abbrs) - set(df['postal_code'].unique())
+st.markdown(f'{len(absent_states)} states with no WARN filings in dataset: {', '.join(sorted(absent_states))}.')
+st.markdown(f'{len(absent_territories)} territories with no WARN filings in dataset: {', '.join(sorted(absent_territories))}.')
+st.markdown(f'{len(df)} most recent WARN records loaded from dataset of 84,000+.')
 
 st.write("---")
 st.subheader("Most recent WARN records - current & upcoming layoffs")
 st.markdown('Since this data is sourced from state labor department websites that each have different formats this information is reported in, \
             not all records have the same fields filled out. Not all records have both a notice date and effective date, so we use the earliest of the dates available to sort the data.')
+st.markdown(f'Columns in integrated.csv: {list(df.columns)}')
 st.dataframe(filtered_df, width='stretch')
 
 # --- Visualizations ---
@@ -142,7 +150,7 @@ st.subheader("Layoffs over time")
 fig_time = px.bar(filtered_df.groupby('date')['jobs'].sum().reset_index(), x='date', y='jobs', title='daily') # line
 st.plotly_chart(fig_time, width='stretch')
 
-df_monthly = filtered_df.groupby(pd.Grouper(key='date', freq='M'))['jobs'].sum().reset_index()
+df_monthly = filtered_df.groupby(pd.Grouper(key='date', freq='ME'))['jobs'].sum().reset_index()
 fig_time = px.bar(df_monthly, x='date', y='jobs', title='monthly',
                   hover_data={"jobs": ":.0f"}) # line
 st.plotly_chart(fig_time, width='stretch')
