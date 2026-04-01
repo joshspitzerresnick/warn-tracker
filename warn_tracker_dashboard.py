@@ -93,14 +93,14 @@ col1, col2, col3 = st.columns(3)
 col1.metric("Total layoffs", int(filtered_df["jobs"].sum()))
 col2.metric("Unique companies", filtered_df["company"].nunique())
 col3.metric("States affected", filtered_df["postal_code"].nunique())
-st.markdown(f'{df['postal_code'].nunique()} states (+DC) in dataset: {', '.join(sorted(df['postal_code'].unique()))}.')
+st.markdown(f"{df['postal_code'].nunique()} states (+DC) in dataset: {', '.join(sorted(df['postal_code'].unique()))}.")
 state_abbrs = [s.abbr for s in us.STATES]
 territory_abbrs = [s.abbr for s in us.TERRITORIES]
 absent_states = set(state_abbrs) - set(df['postal_code'].unique())
 absent_territories = set(territory_abbrs) - set(df['postal_code'].unique())
-st.markdown(f'{len(absent_states)} states with no WARN filings in dataset: {', '.join(sorted(absent_states))}.')
-st.markdown(f'{len(absent_territories)} territories with no WARN filings in dataset: {', '.join(sorted(absent_territories))}.')
-st.markdown(f'{len(df)} most recent WARN records loaded from dataset of 84,000+.')
+st.markdown(f"{len(absent_states)} states with no WARN filings in dataset: {', '.join(sorted(absent_states))}.")
+st.markdown(f"{len(absent_territories)} territories with no WARN filings in dataset: {', '.join(sorted(absent_territories))}.")
+st.markdown(f"{len(df)} most recent WARN records loaded from dataset of 84,000+.")
 
 st.write("---")
 st.subheader("Most recent WARN records - current & upcoming layoffs")
